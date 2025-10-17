@@ -1,0 +1,42 @@
+name: CI Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Enable pnpm (corepack)
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Install dependencies (app)
+        working-directory: sistema-acolitos/sistema-acolitos
+        run: pnpm install
+
+      - name: Build (app) and capture log
+        working-directory: sistema-acolitos/sistema-acolitos
+        run: pnpm run build 2>&1 | tee build.log
+
+      - name: Upload build log
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: sistema-acolitos/sistema-acolitos/build.log
+
+      - name: Upload dist (if generated)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: sistema-acolitos/sistema-acolitos/dist
